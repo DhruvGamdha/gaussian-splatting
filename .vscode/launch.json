@@ -1,0 +1,39 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: train.py debug",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "train.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "-s",
+                // "..\\data\\blackEng_office\\ver1"
+                "/work/mech-ai-scratch/dgamdha/projects/sdat/code/gaussian-splatting/data/2025_jan_14/vid_2"
+                ]
+        },
+        {
+            "name": "Python: convert.py debug",
+            "type": "python",
+            "request": "launch",
+            "program": "convert.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "-s",
+                // "..\\data\\blackEng_office\\ver1"
+                "/work/mech-ai-scratch/dgamdha/projects/sdat/code/gaussian-splatting/data/2025_jan_14/vid_1"
+                ],
+            "env": {
+                // Conda environment
+                "PYTHONPATH": "/work/mech-ai-scratch/dgamdha/projects/sdat/code/gaussian-splatting"
+            }
+        }
+        
+    ]
+}
