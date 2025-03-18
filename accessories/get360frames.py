@@ -124,6 +124,12 @@ if __name__ == "__main__":
     for img_name in os.listdir(equirect_pth):
         if img_name.endswith('.jpg') or img_name.endswith('.png'):
             equirect_img_path = os.path.join(equirect_pth, img_name)
+            
+            # Check if the image already exists in the cubemap_pth faces
+            if any(os.path.exists(os.path.join(cubemap_pth, face, img_name)) for face in facenames):
+                print(f"Skipping {img_name}, already exists in cubemap faces.")
+                continue
+            
             equirect_img = cv2.imread(equirect_img_path)
             
             # Convert to cubemap

@@ -19,7 +19,7 @@
         },
         {
             "name": "Python: convert.py debug",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "convert.py",
             "console": "integratedTerminal",
@@ -33,6 +33,14 @@
                 // Conda environment
                 "PYTHONPATH": "/work/mech-ai-scratch/dgamdha/projects/sdat/code/gaussian-splatting"
             }
+        },
+        {
+            "name": "Python: convert.py debug (wrapper script)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/run_convert.sh",
+            "console": "integratedTerminal",
+            "justMyCode": true
         }
         
     ]
