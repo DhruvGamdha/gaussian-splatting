@@ -2,8 +2,37 @@
 
 import argparse
 import os
+import re
 import shutil
 from pathlib import Path
+
+def list_jpg_files_in_range(directory, start_idx, end_idx):
+    """
+    Lists all .jpg files in 'directory' whose filenames contain an integer N in the range [start_idx, end_idx].
+    The integer is matched by finding the first group of digits in the file name (before the .jpg).
+    Returns a list of (filepath, numeric_index) sorted by numeric_index ascending.
+    """
+    # Regex to capture digits before .jpg (e.g., 123456 in "123456.jpg" or "image_123456.jpg")
+    pattern = re.compile(r'(\d+)\.jpg$', re.IGNORECASE)
+    
+    matched_files = []
+    for entry in os.scandir(directory):
+        if entry.is_file() and entry.name.lower().endswith(".jpg"):
+            match = pattern.search(entry.name)
+            if match:
+                number_str = match.group(1)
+                # Safely parse integer
+                try:
+                    number_val = int(number_str)
+                except ValueError:
+                    continue
+
+                if start_idx <= number_val <= end_idx:
+                    matched_files.append((entry.path, number_val))
+
+    # Sort ascending by the numeric index
+    matched_files.sort(key=lambda x: x[1])
+    return matched_files
 
 def combine_datasets(
     forward_dir: str,
@@ -16,7 +45,7 @@ def combine_datasets(
 ):
     """
     Combines frames from two cubemap folders (forward and backward) into a new dataset,
-    where the forward subset is in ascending order, and the backward subset is in descending order.
+    where the forward subset is in ascending numeric order, and the backward subset is in descending numeric order.
     The result is saved in out_dir, with images numbered starting from 1.
     Also writes a 'parameters.txt' file containing the user-specified parameters.
     """
@@ -36,44 +65,33 @@ def combine_datasets(
         f.write(f"backward_end: {backward_end}\n")
         f.write(f"out_dir: {out_dir}\n")
 
+    # 1) Gather forward subset
+    forward_files = list_jpg_files_in_range(forward_dir, forward_start, forward_end)
+    # forward_files is a list of (filepath, numeric_index), sorted ascending
+
+    # 2) Gather backward subset
+    backward_files = list_jpg_files_in_range(backward_dir, backward_start, backward_end)
+    # We'll want to process them in descending order eventually
+
     current_index = 1  # This will be used for naming the combined output frames
-    
-    # 1) Copy forward subset in ascending order
-    for i in range(forward_start, forward_end + 1):
-        # Construct the file name in forward_dir
-        # e.g., if frames are named "00001.jpg", "00002.jpg", etc.
-        # We'll match that naming. If your files are zero-padded to 5 digits, do that:
-        forward_file_name = f"{i:05d}.jpg"
-        source_path = os.path.join(forward_dir, forward_file_name)
-        if not os.path.isfile(source_path):
-            print(f"[WARN] Forward file not found: {source_path}. Skipping.")
-            continue
-        
-        # Construct the destination path with new index
+
+    # Copy forward subset in ascending order
+    for filepath, number_val in forward_files:
         out_name = f"{current_index:05d}.jpg"
         dest_path = os.path.join(out_dir, out_name)
-        
-        shutil.copy2(source_path, dest_path)
+        shutil.copy2(filepath, dest_path)
         current_index += 1
 
-    # 2) Copy backward subset in descending order
-    for i in range(backward_end, backward_start - 1, -1):
-        # Construct the file name in backward_dir
-        backward_file_name = f"{i:05d}.jpg"
-        source_path = os.path.join(backward_dir, backward_file_name)
-        if not os.path.isfile(source_path):
-            print(f"[WARN] Backward file not found: {source_path}. Skipping.")
-            continue
-        
-        # Construct the destination path with new index
+    # Copy backward subset in descending order
+    for filepath, number_val in reversed(backward_files):
         out_name = f"{current_index:05d}.jpg"
         dest_path = os.path.join(out_dir, out_name)
-        
-        shutil.copy2(source_path, dest_path)
+        shutil.copy2(filepath, dest_path)
         current_index += 1
 
+    num_copied = current_index - 1
     print(f"Done! Combined dataset written to: {out_dir}")
-    print(f"Number of frames in the final dataset: {current_index - 1}")
+    print(f"Number of frames in the final dataset: {num_copied}")
     print(f"Parameters saved to: {params_file}")
 
 def main():
