@@ -23,7 +23,7 @@ def extract_equirectangular_frames(video_path, output_dir, skip_frames=1):
             break
         
         if frame_idx % skip_frames == 0:
-            out_path = os.path.join(output_dir, f"frame_{frame_idx:06d}.jpg")
+            out_path = os.path.join(output_dir, f"{saved_count:06d}.jpg")
             cv2.imwrite(out_path, frame)
             saved_count += 1
         
@@ -102,43 +102,43 @@ def equirect_to_cubemap(equirect_img, face_size=512):
     return cube_faces
 
 if __name__ == "__main__":
-    # vid_1_pth = '/work/mech-ai-scratch/dgamdha/projects/sdat/code/gaussian-splatting/data/2025_jan_14/vid_1/1_VID_20241024_192309_00_028.mp4'
-    equirect_pth = '/work/mech-ai-scratch/dgamdha/projects/sdat/code/gaussian-splatting/data/2025_jan_14/customFrames/vid_2/1_equirect'
-    cubemap_pth = '/work/mech-ai-scratch/dgamdha/projects/sdat/code/gaussian-splatting/data/2025_jan_14/customFrames/vid_2/2_cubemap'
-    # skip_frames=10 
-    # extract_equirectangular_frames(vid_1_pth, equirect_pth, skip_frames)
+    vid_1_pth = '/work/mech-ai-scratch/dgamdha/projects/sdat/code/gaussian-splatting/data/2025_jan_14/vid_1/1_VID_20241024_192309_00_028.mp4'
+    equirect_pth = '/work/mech-ai-scratch/dgamdha/projects/sdat/code/gaussian-splatting/data/2025_jan_14/customFrames/vid_1/1_equirect'
+    cubemap_pth = '/work/mech-ai-scratch/dgamdha/projects/sdat/code/gaussian-splatting/data/2025_jan_14/customFrames/vid_1/2_cubemap'
+    skip_frames=10 
+    extract_equirectangular_frames(vid_1_pth, equirect_pth, skip_frames)
     
-    facenames = ['posx', 'negx', 'posy', 'negy', 'posz', 'negz']
+    # facenames = ['posx', 'negx', 'posy', 'negy', 'posz', 'negz']
     
-    # Check if cubemap_pth exist else create the folder
-    if not os.path.exists(cubemap_pth):
-        os.makedirs(cubemap_pth)
+    # # Check if cubemap_pth exist else create the folder
+    # if not os.path.exists(cubemap_pth):
+    #     os.makedirs(cubemap_pth)
         
-    # Check if facenames folders exist inside the cubemap_pth else create the folders
-    for face in facenames:
-        face_path = os.path.join(cubemap_pth, face)
-        if not os.path.exists(face_path):
-            os.makedirs(face_path)
+    # # Check if facenames folders exist inside the cubemap_pth else create the folders
+    # for face in facenames:
+    #     face_path = os.path.join(cubemap_pth, face)
+    #     if not os.path.exists(face_path):
+    #         os.makedirs(face_path)
             
-    # Loop through each equirectangular image inside the equirect_pth and convert to cubemap
-    for img_name in os.listdir(equirect_pth):
-        if img_name.endswith('.jpg') or img_name.endswith('.png'):
-            equirect_img_path = os.path.join(equirect_pth, img_name)
+    # # Loop through each equirectangular image inside the equirect_pth and convert to cubemap
+    # for img_name in os.listdir(equirect_pth):
+    #     if img_name.endswith('.jpg') or img_name.endswith('.png'):
+    #         equirect_img_path = os.path.join(equirect_pth, img_name)
             
-            # Check if the image already exists in the cubemap_pth faces
-            if any(os.path.exists(os.path.join(cubemap_pth, face, img_name)) for face in facenames):
-                print(f"Skipping {img_name}, already exists in cubemap faces.")
-                continue
+    #         # Check if the image already exists in the cubemap_pth faces
+    #         if any(os.path.exists(os.path.join(cubemap_pth, face, img_name)) for face in facenames):
+    #             print(f"Skipping {img_name}, already exists in cubemap faces.")
+    #             continue
             
-            equirect_img = cv2.imread(equirect_img_path)
+    #         equirect_img = cv2.imread(equirect_img_path)
             
-            # Convert to cubemap
-            cube_faces = equirect_to_cubemap(equirect_img)
+    #         # Convert to cubemap
+    #         cube_faces = equirect_to_cubemap(equirect_img)
             
-            # Save each face of the cubemap
-            for face_name, face_img in cube_faces.items():
-                face_path = os.path.join(cubemap_pth, face_name, img_name)
-                cv2.imwrite(face_path, face_img)
-            print(f"Converted {img_name} to cubemap faces in {cubemap_pth}")
-        # break
-    print("Cubemap conversion completed for all images.")
+    #         # Save each face of the cubemap
+    #         for face_name, face_img in cube_faces.items():
+    #             face_path = os.path.join(cubemap_pth, face_name, img_name)
+    #             cv2.imwrite(face_path, face_img)
+    #         print(f"Converted {img_name} to cubemap faces in {cubemap_pth}")
+    #     # break
+    # print("Cubemap conversion completed for all images.")
