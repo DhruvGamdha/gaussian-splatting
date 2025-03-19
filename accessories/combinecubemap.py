@@ -64,6 +64,10 @@ def combine_datasets(
         f.write(f"backward_start: {backward_start}\n")
         f.write(f"backward_end: {backward_end}\n")
         f.write(f"out_dir: {out_dir}\n")
+        
+    # create input directory inside out_dir if it doesn't exist and update the out_dir to point to it
+    out_inp_dir = os.path.join(out_dir, "input")
+    os.makedirs(out_inp_dir, exist_ok=True)
 
     # 1) Gather forward subset
     forward_files = list_jpg_files_in_range(forward_dir, forward_start, forward_end)
@@ -78,19 +82,19 @@ def combine_datasets(
     # Copy forward subset in ascending order
     for filepath, number_val in forward_files:
         out_name = f"{current_index:05d}.jpg"
-        dest_path = os.path.join(out_dir, out_name)
+        dest_path = os.path.join(out_inp_dir, out_name)
         shutil.copy2(filepath, dest_path)
         current_index += 1
 
     # Copy backward subset in descending order
     for filepath, number_val in reversed(backward_files):
         out_name = f"{current_index:05d}.jpg"
-        dest_path = os.path.join(out_dir, out_name)
+        dest_path = os.path.join(out_inp_dir, out_name)
         shutil.copy2(filepath, dest_path)
         current_index += 1
 
     num_copied = current_index - 1
-    print(f"Done! Combined dataset written to: {out_dir}")
+    print(f"Done! Combined dataset written to: {out_inp_dir}")
     print(f"Number of frames in the final dataset: {num_copied}")
     print(f"Parameters saved to: {params_file}")
 
