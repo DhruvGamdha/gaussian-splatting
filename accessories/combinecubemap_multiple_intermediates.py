@@ -130,7 +130,7 @@ def sample_perspective_from_equirect(equirect_img, vfov=90, yaw=0, pitch=0, out_
                               [-s_y,0, c_y]])
             vec = rot_y.dot(vec)
             x_3d, y_3d, z_3d = vec
-            longitude = np.arctan2(x_3d, z_3d)
+            longitude = np.arctan2(z_3d, x_3d)
             latitude = np.arcsin(y_3d)
             x_eq = (longitude + np.pi) / (2.0 * np.pi) * w
             y_eq = (np.pi / 2 - latitude) / np.pi * h
@@ -256,10 +256,15 @@ def combine_datasets_with_intermediates(config_entries, equirect_dir, start_idx,
                             print(f"[WARN] Unknown view names: {view} or {next_view}; cannot generate intermediate views.")
                         else:
                             # Generate intermediate frames using slerp.
-                            for j in range(1, num_intermediate + 1):
+                            # for j in range(1, num_intermediate + 1):
+                            for j in range(num_intermediate, 0, -1):
                                 t = j / (num_intermediate + 1)
                                 interp_vec = slerp(v_current, v_next, t)
                                 inter_img = generate_perspective_view(equirect_img, interp_vec, vfov=vfov, out_size=out_size)
+                                
+                                # Flip the image horizontally to match cubemap orientation.
+                                # inter_img = cv2.flip(inter_img, 1)
+                                
                                 out_name = f"{current_index:05d}.jpg"
                                 dest_path = os.path.join(out_inp_dir, out_name)
                                 cv2.imwrite(dest_path, inter_img)
