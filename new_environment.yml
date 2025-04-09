@@ -1,4 +1,4 @@
-name: gaussian_splatting
+name: gsplat_v2
 channels:
   - pytorch
   - nvidia
@@ -9,12 +9,12 @@ dependencies:
   - python=3.11.9
   - pip=22.3.1
   - tqdm
-  - pip:
-    - torch --extra-index-url https://download.pytorch.org/whl/cu124
-    - torchvision --extra-index-url https://download.pytorch.org/whl/cu124
-    - torchaudio --extra-index-url https://download.pytorch.org/whl/cu124
-    - submodules/diff-gaussian-rasterization
-    - submodules/simple-knn
-    - submodules/fused-ssim
-    - opencv-python
-    - joblib
+  # - pip:
+    # - torch --extra-index-url https://download.pytorch.org/whl/cu124
+    # - torchvision --extra-index-url https://download.pytorch.org/whl/cu124
+    # - torchaudio --extra-index-url https://download.pytorch.org/whl/cu124
+    # - submodules/diff-gaussian-rasterization
+    # - submodules/simple-knn
+    # - submodules/fused-ssim
+    # - opencv-python
+    # - joblib

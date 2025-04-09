@@ -13,9 +13,12 @@
             "justMyCode": true,
             "args": [
                 "-s",
-                // "..\\data\\blackEng_office\\ver1"
-                "/work/mech-ai-scratch/dgamdha/projects/sdat/code/gaussian-splatting/data/2025_jan_14/vid_2"
-                ]
+                // "/work/mech-ai-scratch/dgamdha/projects/sdat/code/gaussian-splatting/data/2025_jan_14/vid_2"
+                "/work/mech-ai-scratch/dgamdha/projects/sdat/code/gaussian-splatting/data/2025_jan_14/customFrames/vid_2/afterConvertPy/4_cubemap_combined/ver3"
+                ],
+            "env": {
+                "PYTHONPATH": "/work/mech-ai-scratch/dgamdha/projects/sdat/code/gaussian-splatting"
+            }
         },
         {
             "name": "Python: convert.py debug",
@@ -30,7 +33,6 @@
                 "/work/mech-ai-scratch/dgamdha/projects/sdat/code/gaussian-splatting/data/2025_jan_14/vid_1"
                 ],
             "env": {
-                // Conda environment
                 "PYTHONPATH": "/work/mech-ai-scratch/dgamdha/projects/sdat/code/gaussian-splatting"
             }
         },

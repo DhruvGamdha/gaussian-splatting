@@ -6,7 +6,6 @@ module purge
 module load micromamba
 module load cuda/11.8.0-zg46pdv
 module load colmap
-# module load cuda/11.8.0-fvsgo54   # This creates a conflict with the micromamba module
 # ^^^^
 
 # ----------
