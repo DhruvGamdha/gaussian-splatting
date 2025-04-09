@@ -240,7 +240,6 @@ def combine_datasets_with_intermediates(config_entries, equirect_dir, start_idx,
         if i < num_entries - 1:
             next_direction, next_view, next_dir = config_entries[i + 1]
             if view != next_view:
-                # Use the boundary index (last_numeric) from the current dataset.
                 if last_numeric is None or last_numeric not in equirect_dict:
                     print(f"[WARN] Boundary index {last_numeric} not found in equirectangular directory; skipping intermediate views.")
                 else:
@@ -255,16 +254,11 @@ def combine_datasets_with_intermediates(config_entries, equirect_dir, start_idx,
                         if v_current is None or v_next is None:
                             print(f"[WARN] Unknown view names: {view} or {next_view}; cannot generate intermediate views.")
                         else:
-                            # Generate intermediate frames using slerp.
-                            # for j in range(1, num_intermediate + 1):
-                            for j in range(num_intermediate, 0, -1):
+                            # Generate intermediate frames in ascending order (from t=1/(N+1) to t=N/(N+1))
+                            for j in range(1, num_intermediate + 1):
                                 t = j / (num_intermediate + 1)
                                 interp_vec = slerp(v_current, v_next, t)
                                 inter_img = generate_perspective_view(equirect_img, interp_vec, vfov=vfov, out_size=out_size)
-                                
-                                # Flip the image horizontally to match cubemap orientation.
-                                # inter_img = cv2.flip(inter_img, 1)
-                                
                                 out_name = f"{current_index:05d}.jpg"
                                 dest_path = os.path.join(out_inp_dir, out_name)
                                 cv2.imwrite(dest_path, inter_img)
