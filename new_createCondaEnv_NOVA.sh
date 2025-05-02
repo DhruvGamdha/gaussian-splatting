@@ -14,7 +14,13 @@ echo "Installing PyTorch..."
 pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
 
 echo "Installing submodules..."
+pip install --upgrade wheel
+
+# ---
 pip3 install submodules/diff-gaussian-rasterization
+# pip install --no-build-isolation submodules/diff-gaussian-rasterization   # if above do not work, use this 
+# ---
+
 pip3 install submodules/simple-knn
 pip3 install submodules/fused-ssim
 
