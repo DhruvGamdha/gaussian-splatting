@@ -1,0 +1,9 @@
+# This is an example config file
+forward posz C:\Users\dgamdha\work\Projects\others\gaussian_splatting\data\onedrive_2023_12_13\type1\cubemap\posz
+backward posx C:\Users\dgamdha\work\Projects\others\gaussian_splatting\data\onedrive_2023_12_13\type1\cubemap\posx
+forward negz C:\Users\dgamdha\work\Projects\others\gaussian_splatting\data\onedrive_2023_12_13\type1\cubemap\negz
+backward negx C:\Users\dgamdha\work\Projects\others\gaussian_splatting\data\onedrive_2023_12_13\type1\cubemap\negx
+# forward posy /work/mech-ai-scratch/dgamdha/projects/sdat/code/gaussian-splatting/data/2025_jan_14/customFrames/vid_2/rawFrames/2_cubemap/posy/input
+
+# forward /maybe/more
+# ^ commented out
