@@ -22,11 +22,8 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).parent  # accessories folder
 BASE_PATH = SCRIPT_DIR.parent        # project root folder
 
-# Platform-specific config files
-if platform.system() == "Windows":
-    CONFIG_FILE = "win_combcube_multi_interme_config.txt"
-else:  # Linux/Unix
-    CONFIG_FILE = "combcube_multi_interme_config.txt"
+# Unified config file (works for both platforms)
+CONFIG_FILE = "combcube_multi_config.cfg"
 
 DATA_PATH = BASE_PATH / "data"
 ACCESSORIES_PATH = SCRIPT_DIR  # Use SCRIPT_DIR directly since it's already the accessories folder
@@ -84,10 +81,10 @@ def run_cubemap_multiple_intermediates():
     # Create output directory if it doesn't exist
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     print(f"Output directory ready: {OUT_DIR}")
-    
-    # Prepare command arguments
+      # Prepare command arguments
+    script_path = ACCESSORIES_PATH / "combinecubemap_multiple_intermediates.py"
     cmd = [
-        "python", "combinecubemap_multiple_intermediates.py",
+        "python", str(script_path),
         "--config", str(CONFIG_PATH),
         "--equirect_dir", str(EQUIRECT_DIR),
         "--start_idx", str(START_IDX),

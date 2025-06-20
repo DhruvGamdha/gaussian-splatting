@@ -28,13 +28,21 @@ def load_config_file(config_path):
     """
     Reads a configuration text file where each non-comment line
     has the format:
-        <direction> <view> <full_path_to_directory>
+        <direction> <view> <path_to_directory>
     For example:
         forward posz /very/long/path/dir1
-        backward posx /very/long/path/dir2
+        backward posx data/project/dir2  # relative path
+    
+    Relative paths are resolved relative to the project root directory.
+    The project root is assumed to be the parent directory of where this script is located.
+    
     Returns a list of tuples: (direction, view, directory) preserving order.
     """
     entries = []
+    # Get project root (parent of accessories folder where this script is located)
+    script_dir = Path(__file__).parent
+    project_root = script_dir.parent
+    
     with open(config_path, "r") as f:
         for line in f:
             line = line.strip()
@@ -45,7 +53,20 @@ def load_config_file(config_path):
                 print(f"[WARN] Ignoring malformed config line: '{line}'")
                 continue
             direction, view, directory = parts
-            entries.append((direction.lower(), view.lower(), directory))
+            
+            # Convert directory path to absolute path
+            dir_path = Path(directory)
+            if not dir_path.is_absolute():
+                # Resolve relative path from project root
+                dir_path = project_root / directory
+            
+            # Convert back to string and ensure it exists
+            directory_str = str(dir_path.resolve())
+            if not dir_path.exists():
+                print(f"[WARN] Directory does not exist: {directory_str}")
+                continue
+                
+            entries.append((direction.lower(), view.lower(), directory_str))
     return entries
 
 def list_jpg_files_in_range(directory, start_idx, end_idx):
