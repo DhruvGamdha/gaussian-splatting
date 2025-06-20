@@ -103,8 +103,8 @@ def equirect_to_cubemap(equirect_img, face_size=512):
 
 if __name__ == "__main__":
     vid_1_pth = '/work/mech-ai-scratch/dgamdha/projects/sdat/code/gaussian-splatting/data/2025_jan_14/vid_1/1_VID_20241024_192309_00_028.mp4'
-    equirect_pth = '/work/mech-ai-scratch/dgamdha/projects/sdat/code/gaussian-splatting/data/2025_jan_14/customFrames/vid_1/1_equirect'
-    cubemap_pth = '/work/mech-ai-scratch/dgamdha/projects/sdat/code/gaussian-splatting/data/2025_jan_14/customFrames/vid_1/2_cubemap'
+    equirect_pth = 'C:\\Users\dgamdha\work\Projects\others\gaussian_splatting\data\onedrive_2023_12_13\\type1\original'
+    cubemap_pth = 'C:\\Users\dgamdha\work\Projects\others\gaussian_splatting\data\onedrive_2023_12_13\\type1\cubemap'
     skip_frames=10 
     extract_equirectangular_frames(vid_1_pth, equirect_pth, skip_frames)
     

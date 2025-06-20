@@ -1,26 +1,68 @@
-# python combinecubemap.py \
-#     --forward_dir /work/mech-ai-scratch/dgamdha/projects/sdat/code/gaussian-splatting/data/2025_jan_14/customFrames/vid_2/rawFrames/4_cubemap_combined/ver2/posz_posx_negz \
-#     --backward_dir /work/mech-ai-scratch/dgamdha/projects/sdat/code/gaussian-splatting/data/2025_jan_14/customFrames/vid_2/rawFrames/2_cubemap/negz/input \
-#     --forward_start 1 \
-#     --forward_end 123 \
-#     --backward_start 20 \
-#     --backward_end 60 \
-#     --out_dir /work/mech-ai-scratch/dgamdha/projects/sdat/code/gaussian-splatting/data/2025_jan_14/customFrames/vid_2/rawFrames/4_cubemap_combined/ver2
+# ==============================================================================
+# Windows Run Scripts - Gaussian Splatting
+# ==============================================================================
+# Simple PowerShell script to run Python scripts with configurable paths
 
-# python combinecubemap_multiple.py \
-# --config /work/mech-ai-scratch/dgamdha/projects/sdat/code/gaussian-splatting/accessories/combcube_multi_config.txt \
-# --start_idx 20 \
-# --end_idx 100 \
-# --out_dir /work/mech-ai-scratch/dgamdha/projects/sdat/code/gaussian-splatting/data/2025_jan_14/customFrames/vid_2/rawFrames/4_cubemap_combined/ver4
+# Configuration Variables
+# ==============================================================================
 
+# Base paths
+$BasePath = "C:\Users\dgamdha\work\Projects\others\gaussian_splatting"
+$DataPath = "$BasePath\data"
+$AccessoriesPath = "$BasePath\code_gaussian-splatting\accessories"
+
+# Project configuration (modify as needed)
+$ProjectPath = "onedrive_2023_12_13\type1"  # Adjust this path for your project structure
+$InputFolder = "original"
+$OutputFolder = "cubemap_combined\ver1"
+
+# Script parameters
+$ConfigFile = "$AccessoriesPath\win_combcube_multi_interme_config.txt"
+$EquirectDir = "$DataPath\$ProjectPath\$InputFolder"
+$OutDir = "$DataPath\$ProjectPath\$OutputFolder"
+$StartIdx = 0
+$EndIdx = 14
+$NumIntermediate = 3
+$VFov = 90
+$OutSize = 512
+
+# Script Execution
+# ==============================================================================
+
+Write-Host "=== Running Cubemap Multiple Intermediates ===" -ForegroundColor Green
+Write-Host "Config: $ConfigFile" -ForegroundColor Yellow
+Write-Host "Input: $EquirectDir" -ForegroundColor Yellow
+Write-Host "Output: $OutDir" -ForegroundColor Yellow
+Write-Host ""
+
+# Create output directory if it doesn't exist
+if (!(Test-Path $OutDir)) {
+    Write-Host "Creating output directory..." -ForegroundColor Magenta
+    New-Item -ItemType Directory -Path $OutDir -Force | Out-Null
+}
+
+# Run the Python script
 python combinecubemap_multiple_intermediates.py `
-    --config "C:\Users\dgamdha\work\Projects\others\gaussian_splatting\code_gaussian-splatting\accessories\win_combcube_multi_interme_config.txt" `
-    --equirect_dir "C:\Users\dgamdha\work\Projects\others\gaussian_splatting\data\onedrive_2023_12_13\type1\original" `
-    --start_idx 0 `
-    --end_idx 14 `
-    --num_intermediate 3 `
-    --vfov 90 `
-    --out_size 512 `
-    --out_dir "C:\Users\dgamdha\work\Projects\others\gaussian_splatting\data\onedrive_2023_12_13\type1\cubemap_combined\ver1"
+    --config "$ConfigFile" `
+    --equirect_dir "$EquirectDir" `
+    --start_idx $StartIdx `
+    --end_idx $EndIdx `
+    --num_intermediate $NumIntermediate `
+    --vfov $VFov `
+    --out_size $OutSize `
+    --out_dir "$OutDir"
 
+Write-Host "Script execution completed!" -ForegroundColor Green
+
+# Additional Scripts (uncomment to use)
+# ==============================================================================
+
+# Alternative script with different parameters
+<#
+python combinecubemap_multiple.py `
+    --config "$AccessoriesPath\combcube_multi_config.txt" `
+    --start_idx 20 `
+    --end_idx 100 `
+    --out_dir "$DataPath\2025_jan_14\customFrames\vid_2\rawFrames\4_cubemap_combined\ver4"
+#>
 
