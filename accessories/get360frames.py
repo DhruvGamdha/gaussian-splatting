@@ -1,6 +1,9 @@
 import cv2
 import os
+import sys
+import argparse
 import numpy as np
+from project_config import get_config
 
 def extract_equirectangular_frames(video_path, output_dir, skip_frames=1):
     """
@@ -102,43 +105,79 @@ def equirect_to_cubemap(equirect_img, face_size=512):
     return cube_faces
 
 if __name__ == "__main__":
-    vid_1_pth = '/work/mech-ai-scratch/dgamdha/projects/sdat/code/gaussian-splatting/data/2025_jan_14/vid_1/1_VID_20241024_192309_00_028.mp4'
-    equirect_pth = 'C:\\Users\dgamdha\work\Projects\others\gaussian_splatting\data\onedrive_2023_12_13\\type1\original'
-    cubemap_pth = 'C:\\Users\dgamdha\work\Projects\others\gaussian_splatting\data\onedrive_2023_12_13\\type1\cubemap'
-    skip_frames=10 
-    extract_equirectangular_frames(vid_1_pth, equirect_pth, skip_frames)
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description="Extract 360-degree frames from video and convert to cubemap")
+    parser.add_argument('--config', default='project_config.ini', help='Configuration file to use')
+    args = parser.parse_args()
     
-    facenames = ['posx', 'negx', 'posy', 'negy', 'posz', 'negz']
+    # Load configuration
+    cfg = get_config(args.config)
     
-    # Check if cubemap_pth exist else create the folder
-    if not os.path.exists(cubemap_pth):
-        os.makedirs(cubemap_pth)
+    # Get paths and parameters from config
+    video_path = cfg.get_video_path()
+    equirect_dir = cfg.equirect_dir
+    cubemap_dir = cfg.cubemap_dir
+    
+    # Get video processing parameters
+    video_params = cfg.video_processing_params
+    skip_frames = video_params['skip_frames']
+    
+    # Get cubemap parameters
+    cubemap_params = cfg.cubemap_params
+    face_size = cubemap_params['face_size']
+    face_names = cfg.face_names
+    
+    print("=== 360° Video Processing ===")
+    print(f"Video: {video_path}")
+    print(f"Equirect Output: {equirect_dir}")
+    print(f"Cubemap Output: {cubemap_dir}")
+    print(f"Skip Frames: {skip_frames}")
+    print(f"Face Size: {face_size}")
+    print()
+    
+    # Extract equirectangular frames from video
+    if video_path.exists():
+        extract_equirectangular_frames(str(video_path), str(equirect_dir), skip_frames)
+    else:
+        print(f"Warning: Video file not found: {video_path}")
+        print("Skipping video extraction, processing existing equirectangular images...")
+    
+    # Create cubemap directory structure
+    cubemap_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Create face directories
+    for face in face_names:
+        face_path = cubemap_dir / face
+        face_path.mkdir(exist_ok=True)
+    
+    # Convert equirectangular images to cubemap
+    if not equirect_dir.exists():
+        print(f"Error: Equirectangular directory not found: {equirect_dir}")
+        exit(1)
         
-    # Check if facenames folders exist inside the cubemap_pth else create the folders
-    for face in facenames:
-        face_path = os.path.join(cubemap_pth, face)
-        if not os.path.exists(face_path):
-            os.makedirs(face_path)
-            
-    # Loop through each equirectangular image inside the equirect_pth and convert to cubemap
-    for img_name in os.listdir(equirect_pth):
-        if img_name.endswith('.jpg') or img_name.endswith('.png'):
-            equirect_img_path = os.path.join(equirect_pth, img_name)
-            
-            # Check if the image already exists in the cubemap_pth faces
-            if any(os.path.exists(os.path.join(cubemap_pth, face, img_name)) for face in facenames):
-                print(f"Skipping {img_name}, already exists in cubemap faces.")
-                continue
-            
-            equirect_img = cv2.imread(equirect_img_path)
-            
-            # Convert to cubemap
-            cube_faces = equirect_to_cubemap(equirect_img)
-            
-            # Save each face of the cubemap
-            for face_name, face_img in cube_faces.items():
-                face_path = os.path.join(cubemap_pth, face_name, img_name)
-                cv2.imwrite(face_path, face_img)
-            print(f"Converted {img_name} to cubemap faces in {cubemap_pth}")
-        # break
-    print("Cubemap conversion completed for all images.")
+    for img_file in equirect_dir.glob('*.jpg'):
+        img_name = img_file.name
+        
+        # Check if the image already exists in all cubemap faces
+        if all((cubemap_dir / face / img_name).exists() for face in face_names):
+            print(f"Skipping {img_name}, already exists in cubemap faces.")
+            continue
+        
+        print(f"Converting {img_name} to cubemap...")
+        equirect_img = cv2.imread(str(img_file))
+        
+        if equirect_img is None:
+            print(f"Warning: Could not read image {img_file}")
+            continue
+        
+        # Convert to cubemap with configured face size
+        cube_faces = equirect_to_cubemap(equirect_img, face_size=face_size)
+        
+        # Save each face of the cubemap
+        for face_name, face_img in cube_faces.items():
+            face_file = cubemap_dir / face_name / img_name
+            cv2.imwrite(str(face_file), face_img)
+        
+        print(f"✓ Converted {img_name}")
+    
+    print("✓ Cubemap conversion completed for all images.")

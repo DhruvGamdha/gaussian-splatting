@@ -1,73 +1,50 @@
 #!/usr/bin/env python3
 """
 This script combines multiple cubemap frame datasets into one sequential dataset.
-Each input cubemap dataset is specified via a configuration file (one per line:
-  <direction> <view> <full_path>)
-where direction is either "forward" or "backward" (how to order the frames),
-and view is one of: posx, negx, posy, negy, posz, or negz.
+Each input cubemap dataset is specified via the project_config.ini file.
 The script also uses the original equirectangular frames (from a given directory)
 to generate intermediate perspective views at transitions between datasets when the
 cubemap view changes. The intermediate views are produced via spherical linear
 interpolation (slerp) between the two target view directions.
 All output frames are renumbered sequentially starting from 00001.jpg,
 and a parameters.txt file is written to record all input parameters.
+
+All parameters are read from project_config.ini - no command-line arguments needed.
 """
 
-import argparse
 import os
 import re
+import sys
+import argparse
 import shutil
 from pathlib import Path
+from project_config import get_config
 
 import cv2
 import numpy as np
 
 # --------------------- Utility Functions --------------------- #
 
-def load_config_file(config_path):
+def load_config_entries():
     """
-    Reads a configuration text file where each non-comment line
-    has the format:
-        <direction> <view> <path_to_directory>
-    For example:
-        forward posz /very/long/path/dir1
-        backward posx data/project/dir2  # relative path
-    
-    Relative paths are resolved relative to the project root directory.
-    The project root is assumed to be the parent directory of where this script is located.
+    Load cubemap direction entries from project_config.ini
+    This replaces the old load_config_file function that read from .cfg files
     
     Returns a list of tuples: (direction, view, directory) preserving order.
     """
-    entries = []
-    # Get project root (parent of accessories folder where this script is located)
-    script_dir = Path(__file__).parent
-    project_root = script_dir.parent
+    cfg = get_config()
+    entries = cfg.get_cubemap_directions()
     
-    with open(config_path, "r") as f:
-        for line in f:
-            line = line.strip()
-            if not line or line.startswith('#'):
-                continue
-            parts = line.split(maxsplit=2)
-            if len(parts) < 3:
-                print(f"[WARN] Ignoring malformed config line: '{line}'")
-                continue
-            direction, view, directory = parts
-            
-            # Convert directory path to absolute path
-            dir_path = Path(directory)
-            if not dir_path.is_absolute():
-                # Resolve relative path from project root
-                dir_path = project_root / directory
-            
-            # Convert back to string and ensure it exists
-            directory_str = str(dir_path.resolve())
-            if not dir_path.exists():
-                print(f"[WARN] Directory does not exist: {directory_str}")
-                continue
-                
-            entries.append((direction.lower(), view.lower(), directory_str))
-    return entries
+    # Validate that directories exist
+    validated_entries = []
+    for direction, view, directory in entries:
+        dir_path = Path(directory)
+        if not dir_path.exists():
+            print(f"[WARN] Directory does not exist: {directory}")
+            continue
+        validated_entries.append((direction, view, directory))
+    
+    return validated_entries
 
 def list_jpg_files_in_range(directory, start_idx, end_idx):
     """
@@ -291,40 +268,57 @@ def combine_datasets_with_intermediates(config_entries, equirect_dir, start_idx,
     print(f"Number of frames in the final dataset: {num_copied}")
     print(f"Parameters saved to: {params_file}")
 
-# --------------------- Main Command-Line Interface --------------------- #
+# --------------------- Main Entry Point --------------------- #
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="Combine multiple cubemap datasets (with direction and view) into one dataset "
-                    "and insert intermediate frames (generated from an equirectangular source) at transitions."
-    )
-    parser.add_argument("--config", required=True,
-                        help="Path to the cubemap configuration file (each non-comment line: <direction> <view> <directory>).")
-    parser.add_argument("--equirect_dir", required=True,
-                        help="Path to the directory containing the original equirectangular frames.")
-    parser.add_argument("--start_idx", type=int, required=True,
-                        help="Start index (inclusive) for frame selection (common to all directories).")
-    parser.add_argument("--end_idx", type=int, required=True,
-                        help="End index (inclusive) for frame selection (common to all directories).")
-    parser.add_argument("--num_intermediate", type=int, default=3,
-                        help="Number of intermediate frames to generate at each transition (default: 3).")
-    parser.add_argument("--vfov", type=float, default=90,
-                        help="Field-of-view (in degrees) for perspective sampling (default: 90).")
-    parser.add_argument("--out_size", type=int, default=512,
-                        help="Output image size (square, default: 512).")
-    parser.add_argument("--out_dir", required=True,
-                        help="Path to the output folder.")
-    args = parser.parse_args()
+def main(config_file="project_config.ini"):
+    """
+    Main function that reads all parameters from project_config.ini and runs the combination process.
     
-    config_entries = load_config_file(args.config)
+    Args:
+        config_file: Configuration file to use (default: project_config.ini)
+    """
+    # Load all configuration from specified config file
+    cfg = get_config(config_file)
+    
+    # Get general parameters from config
+    equirect_dir = cfg.equirect_dir
+    
+    # Get cubemap parameters
+    cubemap_params = cfg.cubemap_params
+    start_idx = cubemap_params['start_idx']
+    end_idx = cubemap_params['end_idx']
+    num_intermediate = cubemap_params['num_intermediate']
+    vfov = cubemap_params['vfov']
+    out_size = cubemap_params['out_size']
+    
+    # Get output directory
+    out_dir = cfg.combined_dir
+    
+    # Load configuration entries (cubemap directions)
+    config_entries = load_config_entries()
     if not config_entries:
-        print("No valid cubemap configuration entries found. Exiting.")
+        print(f"No valid cubemap configuration entries found in {config_file}. Exiting.")
         return
     
-    combine_datasets_with_intermediates(config_entries, args.equirect_dir,
-                                          args.start_idx, args.end_idx,
-                                          args.num_intermediate, args.vfov, args.out_size,
-                                          args.out_dir)
+    print(f"Configuration loaded from {config_file}:")
+    print(f"  Equirectangular directory: {equirect_dir}")
+    print(f"  Frame range: {start_idx} to {end_idx}")
+    print(f"  Intermediate frames: {num_intermediate}")
+    print(f"  Field of view: {vfov}°")
+    print(f"  Output size: {out_size}px")
+    print(f"  Output directory: {out_dir}")
+    print(f"  Cubemap entries: {len(config_entries)}")
+    print()
+    
+    combine_datasets_with_intermediates(config_entries, str(equirect_dir),
+                                          start_idx, end_idx,
+                                          num_intermediate, vfov, out_size,
+                                          str(out_dir))
 
 if __name__ == "__main__":
-    main()
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description="Combine multiple cubemap datasets with intermediate views")
+    parser.add_argument('--config', default='project_config.ini', help='Configuration file to use')
+    args = parser.parse_args()
+    
+    main(args.config)
