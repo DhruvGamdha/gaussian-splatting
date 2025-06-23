@@ -63,6 +63,10 @@ def run_script(script_name, config_file="project_config.ini"):
             
         result = subprocess.run(cmd, check=True)
         print(f"\n{script_name} completed successfully!")
+        
+        # Copy config file to appropriate output directories for reproducibility
+        copy_config_to_outputs(script_name, config_file)
+        
         return True
     except subprocess.CalledProcessError as e:
         print(f"\nError: {script_name} failed with return code {e.returncode}")
@@ -70,6 +74,35 @@ def run_script(script_name, config_file="project_config.ini"):
     except FileNotFoundError:
         print(f"\nError: Python executable or script not found")
         return False
+
+def copy_config_to_outputs(script_name, config_file):
+    """Copy config file to relevant output directories based on script type"""
+    cfg = get_config(config_file)
+    
+    # Define output directories based on script type
+    if script_name == "get360frames":
+        # Copy to equirect and cubemap output directories
+        output_dirs = [cfg.equirect_dir, cfg.cubemap_dir]
+    elif script_name == "combinecubemap":
+        # Copy to combined output directory
+        output_dirs = [cfg.combined_dir]
+    elif script_name == "train":
+        # Copy to training output directory
+        output_base = cfg.get_path('paths', 'output_dir')
+        current_project = cfg.get_string('paths', 'current_project')
+        train_subdir = cfg.get_string('paths', 'train_subdir')
+        output_path = output_base / current_project / train_subdir
+        output_dirs = [output_path]
+    else:
+        # Default: copy to project directory
+        output_dirs = [cfg.current_project_dir]
+    
+    # Copy config to each relevant output directory
+    for output_dir in output_dirs:
+        try:
+            cfg.copy_config_to_output(output_dir, script_name)
+        except Exception as e:
+            print(f"Warning: Could not copy config to {output_dir}: {e}")
 
 def show_menu(config_file="project_config.ini"):
     """Show interactive menu for script selection"""

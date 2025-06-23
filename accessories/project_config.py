@@ -214,19 +214,13 @@ class ProjectConfig:
         """Get platform-specific parameters as dict"""
         return {
             'max_threads': self.get_int('platform', 'max_threads'),
-            'memory_limit': self.get_string('platform', 'memory_limit'),
-            'python_executable': self.get_python_executable(),
+            'memory_limit': self.get_string('platform', 'memory_limit'),            'python_executable': self.get_python_executable(),
         }
     
     def get_video_path(self):
-        """Get video path (handles both relative and absolute paths)"""
-        video_path = self.get_string('video_processing', 'video_path')
-        path_obj = Path(video_path)
-        
-        # If it's not absolute, make it relative to project root
-        if not path_obj.is_absolute():
-            return self.project_root / video_path
-        return path_obj
+        """Get video path from video_name in current project directory"""
+        video_name = self.get_string('video_processing', 'video_name')
+        return self.current_project_dir / video_name
     
     def get_cubemap_directions(self):
         """
@@ -257,6 +251,35 @@ class ProjectConfig:
             return self.get_string('platform', 'windows_python', fallback='python')
         else:
             return self.get_string('platform', 'linux_python', fallback='python3')
+    
+    def copy_config_to_output(self, output_dir, script_name=None):
+        """
+        Copy the current config file to an output directory for reproducibility
+        
+        Args:
+            output_dir: Directory where config should be copied
+            script_name: Optional script name to include in filename
+        """
+        import shutil
+        
+        output_path = Path(output_dir)
+        output_path.mkdir(parents=True, exist_ok=True)
+        
+        # Create filename with timestamp and script name
+        from datetime import datetime
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        
+        if script_name:
+            config_filename = f"config_{script_name}_{timestamp}.ini"
+        else:
+            config_filename = f"config_{timestamp}.ini"
+        
+        dest_path = output_path / config_filename
+        
+        # Copy the config file
+        shutil.copy2(self.config_path, dest_path)
+        print(f"Config saved to: {dest_path}")
+        return dest_path
     
     def print_config_summary(self):
         """Print a summary of current configuration"""
