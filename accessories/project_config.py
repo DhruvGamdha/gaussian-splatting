@@ -214,7 +214,8 @@ class ProjectConfig:
         """Get platform-specific parameters as dict"""
         return {
             'max_threads': self.get_int('platform', 'max_threads'),
-            'memory_limit': self.get_string('platform', 'memory_limit'),            'python_executable': self.get_python_executable(),
+            'memory_limit': self.get_string('platform', 'memory_limit'),            
+            'python_executable': self.get_python_executable(),
         }
     
     def get_video_path(self):
