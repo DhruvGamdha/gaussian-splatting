@@ -127,28 +127,28 @@ class ProjectConfig:
     def equirect_dir(self):
         """Get equirectangular images directory"""
         project_dir = self.current_project_dir
-        equirect_subdir = self.get_string('paths', 'equirect_subdir')
+        equirect_subdir = self.get_string('video_processing', 'equirect_subdir')
         return project_dir / equirect_subdir
     
     @property
     def cubemap_dir(self):
         """Get cubemap images directory"""
         project_dir = self.current_project_dir
-        cubemap_subdir = self.get_string('paths', 'cubemap_subdir')
+        cubemap_subdir = self.get_string('video_processing', 'cubemap_subdir')
         return project_dir / cubemap_subdir
     
     @property
     def combined_dir(self):
         """Get combined cubemap output directory"""
         project_dir = self.current_project_dir
-        combined_subdir = self.get_string('paths', 'combined_subdir')
+        combined_subdir = self.get_string('cubemap_combination', 'combined_subdir')
         return project_dir / combined_subdir
     
     @property
     def train_dir(self):
         """Get training dataset directory (user-selected dataset for training)"""
         project_dir = self.current_project_dir
-        train_subdir = self.get_string('paths', 'train_subdir')
+        train_subdir = self.get_string('training', 'train_subdir')
         return project_dir / train_subdir
     
     @property
@@ -170,11 +170,12 @@ class ProjectConfig:
         """Get cubemap processing parameters as dict"""
         return {
             'face_size': self.get_int('cubemap', 'face_size'),
-            'start_idx': self.get_int('cubemap', 'start_idx'),
-            'end_idx': self.get_int('cubemap', 'end_idx'),
-            'num_intermediate': self.get_int('cubemap', 'num_intermediate'),
-            'vfov': self.get_int('cubemap', 'vfov'),
-            'out_size': self.get_int('cubemap', 'out_size'),        }
+            'start_idx': self.get_int('cubemap_combination', 'start_idx'),      # Changed from 'cubemap'
+            'end_idx': self.get_int('cubemap_combination', 'end_idx'),          # Changed from 'cubemap'
+            'num_intermediate': self.get_int('cubemap_combination', 'num_intermediate'),  # Changed
+            'vfov': self.get_int('cubemap_combination', 'vfov'),                # Changed from 'cubemap'
+            'out_size': self.get_int('cubemap_combination', 'out_size'),        # Changed from 'cubemap'
+        }
     
     @property
     def gaussian_splatting_params(self):
@@ -234,13 +235,13 @@ class ProjectConfig:
         entries = []
         
         # Get all keys in cubemap section that start with forward_ or backward_
-        for key in self.config['cubemap']:
+        for key in self.config['cubemap_combination']:
             if key.startswith(('forward_', 'backward_')):
                 # Parse key: "forward_posz" -> direction="forward", view="posz"
                 parts = key.split('_', 1)
                 if len(parts) == 2:
                     direction, view = parts
-                    relative_path = self.config.get('cubemap', key)
+                    relative_path = self.config.get('cubemap_combination', key)
                     absolute_path = self.project_root / relative_path
                     entries.append((direction.lower(), view.lower(), str(absolute_path.resolve())))
         
