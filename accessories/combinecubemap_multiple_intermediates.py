@@ -25,14 +25,17 @@ import numpy as np
 
 # --------------------- Utility Functions --------------------- #
 
-def load_config_entries():
+def load_config_entries(config_file="project_config.ini"):
     """
     Load cubemap direction entries from project_config.ini
     This replaces the old load_config_file function that read from .cfg files
     
+    Args:
+        config_file: Configuration file to use
+    
     Returns a list of tuples: (direction, view, directory) preserving order.
     """
-    cfg = get_config()
+    cfg = get_config(config_file)
     entries = cfg.get_cubemap_directions()
     
     # Validate that directories exist
@@ -46,12 +49,37 @@ def load_config_entries():
     
     return validated_entries
 
+def get_all_jpg_files(directory):
+    """
+    Lists all .jpg files in 'directory'.
+    Returns a list of tuples: (filepath, numeric_index) sorted by numeric_index ascending.
+    If filename doesn't contain a number, it's skipped.
+    """
+    pattern = re.compile(r'(\d+)\.jpg$', re.IGNORECASE)
+    matched_files = []
+    for entry in os.scandir(directory):
+        if entry.is_file() and entry.name.lower().endswith(".jpg"):
+            match = pattern.search(entry.name)
+            if match:
+                try:
+                    number_val = int(match.group(1))
+                except ValueError:
+                    continue
+                matched_files.append((entry.path, number_val))
+    matched_files.sort(key=lambda x: x[1])
+    return matched_files
+
 def list_jpg_files_in_range(directory, start_idx, end_idx):
     """
     Lists all .jpg files in 'directory' whose filenames contain an integer N in the range [start_idx, end_idx].
+    If start_idx == -1 and end_idx == -1, returns all .jpg files.
     The integer is matched by finding the first group of digits in the filename (before ".jpg").
     Returns a list of tuples: (filepath, numeric_index) sorted by numeric_index ascending.
     """
+    # If both are -1, get all files
+    if start_idx == -1 and end_idx == -1:
+        return get_all_jpg_files(directory)
+    
     pattern = re.compile(r'(\d+)\.jpg$', re.IGNORECASE)
     matched_files = []
     for entry in os.scandir(directory):
@@ -70,6 +98,7 @@ def list_jpg_files_in_range(directory, start_idx, end_idx):
 def build_equirect_dict(equirect_dir, start_idx, end_idx):
     """
     Builds a dictionary mapping the numeric index to the file path for .jpg files in the equirectangular directory.
+    If start_idx == -1 and end_idx == -1, includes all .jpg files.
     """
     files = list_jpg_files_in_range(equirect_dir, start_idx, end_idx)
     return {num: path for (path, num) in files}
@@ -177,8 +206,8 @@ def combine_datasets_with_intermediates(config_entries, equirect_dir, start_idx,
     
     :param config_entries: List of tuples (direction, view, directory) for cubemap datasets.
     :param equirect_dir: Path to directory containing the original 360° equirectangular frames.
-    :param start_idx: Start index for frame selection (common to all).
-    :param end_idx: End index for frame selection.
+    :param start_idx: Start index for frame selection (common to all). Use -1 for all frames.
+    :param end_idx: End index for frame selection. Use -1 for all frames.
     :param num_intermediate: Number of intermediate frames to generate at each transition.
     :param vfov: Field-of-view (in degrees) for perspective sampling.
     :param out_size: Output image size (square).
@@ -189,6 +218,12 @@ def combine_datasets_with_intermediates(config_entries, equirect_dir, start_idx,
     out_inp_dir = os.path.join(out_dir, "input")
     os.makedirs(out_inp_dir, exist_ok=True)
     
+    # Determine range description for parameters file
+    if start_idx == -1 and end_idx == -1:
+        range_desc = "all frames"
+    else:
+        range_desc = f"{start_idx} to {end_idx}"
+    
     # Write all parameters to a file for reproducibility.
     params_file = os.path.join(out_dir, "parameters.txt")
     with open(params_file, "w") as f:
@@ -196,6 +231,7 @@ def combine_datasets_with_intermediates(config_entries, equirect_dir, start_idx,
         f.write(f"equirect_dir: {equirect_dir}\n")
         f.write(f"start_idx: {start_idx}\n")
         f.write(f"end_idx: {end_idx}\n")
+        f.write(f"frame_range: {range_desc}\n")
         f.write(f"num_intermediate: {num_intermediate}\n")
         f.write(f"vfov: {vfov}\n")
         f.write(f"out_size: {out_size}\n")
@@ -216,7 +252,10 @@ def combine_datasets_with_intermediates(config_entries, equirect_dir, start_idx,
         # List matching files from current cubemap directory.
         files = list_jpg_files_in_range(cubemap_dir, start_idx, end_idx)
         if not files:
-            print(f"[WARN] No matching .jpg files found in {cubemap_dir} for indices [{start_idx}, {end_idx}].")
+            if start_idx == -1 and end_idx == -1:
+                print(f"[WARN] No .jpg files found in {cubemap_dir}.")
+            else:
+                print(f"[WARN] No matching .jpg files found in {cubemap_dir} for indices [{start_idx}, {end_idx}].")
             continue
         
         # Reverse ordering if direction is "backward"
@@ -295,14 +334,20 @@ def main(config_file="project_config.ini"):
     out_dir = cfg.combined_dir
     
     # Load configuration entries (cubemap directions)
-    config_entries = load_config_entries()
+    config_entries = load_config_entries(config_file)
     if not config_entries:
         print(f"No valid cubemap configuration entries found in {config_file}. Exiting.")
         return
     
+    # Determine range description for console output
+    if start_idx == -1 and end_idx == -1:
+        range_desc = "all available frames"
+    else:
+        range_desc = f"{start_idx} to {end_idx}"
+    
     print(f"Configuration loaded from {config_file}:")
     print(f"  Equirectangular directory: {equirect_dir}")
-    print(f"  Frame range: {start_idx} to {end_idx}")
+    print(f"  Frame range: {range_desc}")
     print(f"  Intermediate frames: {num_intermediate}")
     print(f"  Field of view: {vfov}°")
     print(f"  Output size: {out_size}px")

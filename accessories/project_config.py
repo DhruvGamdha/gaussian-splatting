@@ -234,7 +234,7 @@ class ProjectConfig:
         """
         entries = []
         
-        # Get all keys in cubemap section that start with forward_ or backward_
+        # Get all keys in cubemap_combination section that start with forward_ or backward_
         for key in self.config['cubemap_combination']:
             if key.startswith(('forward_', 'backward_')):
                 # Parse key: "forward_posz" -> direction="forward", view="posz"
@@ -242,7 +242,17 @@ class ProjectConfig:
                 if len(parts) == 2:
                     direction, view = parts
                     relative_path = self.config.get('cubemap_combination', key)
-                    absolute_path = self.project_root / relative_path
+                    
+                    # Check if path is already absolute or starts with data_dir
+                    # If it's just a relative path (doesn't start with data/), prepend data_dir
+                    if not relative_path.startswith(('data/', 'data\\')):
+                        # Path is relative to current_project, so build full path
+                        data_dir = self.get_path('paths', 'data_dir')
+                        absolute_path = data_dir / relative_path
+                    else:
+                        # Path already includes data prefix, resolve from project root
+                        absolute_path = self.project_root / relative_path
+                    
                     entries.append((direction.lower(), view.lower(), str(absolute_path.resolve())))
         
         return entries
