@@ -13,6 +13,74 @@ from pathlib import Path
 from datetime import datetime
 import struct
 
+# ==============================================================================
+# PRESERVATION RULES - Files and folders to keep during cleanup
+# ==============================================================================
+
+# Exact names to preserve (case-sensitive)
+PRESERVE_EXACT = [
+    'input',
+    'parameters.txt',
+]
+
+# File patterns to preserve (startswith, endswith)
+PRESERVE_PATTERNS = [
+    {'startswith': 'config', 'endswith': '.ini'},  # All config*.ini files
+    # Add more patterns as needed:
+    # {'startswith': 'backup', 'endswith': '.txt'},
+    # {'startswith': 'log_', 'endswith': '.log'},
+]
+
+# Directory patterns to preserve
+PRESERVE_DIR_PATTERNS = [
+    # {'startswith': 'backup_', 'endswith': ''},
+    # Add directory-specific patterns if needed
+]
+
+# ==============================================================================
+
+def should_preserve(item_path):
+    """
+    Check if an item should be preserved during cleanup.
+    
+    Args:
+        item_path: Path object of the item to check
+        
+    Returns:
+        tuple: (should_preserve: bool, reason: str)
+    """
+    item_name = item_path.name
+    
+    # Check exact matches
+    if item_name in PRESERVE_EXACT:
+        return True, f"exact match: {item_name}"
+    
+    # Check file patterns
+    if item_path.is_file():
+        for pattern in PRESERVE_PATTERNS:
+            starts = pattern.get('startswith', '')
+            ends = pattern.get('endswith', '')
+            
+            starts_match = item_name.startswith(starts) if starts else True
+            ends_match = item_name.endswith(ends) if ends else True
+            
+            if starts_match and ends_match:
+                return True, f"pattern match: starts='{starts}', ends='{ends}'"
+    
+    # Check directory patterns
+    if item_path.is_dir():
+        for pattern in PRESERVE_DIR_PATTERNS:
+            starts = pattern.get('startswith', '')
+            ends = pattern.get('endswith', '')
+            
+            starts_match = item_name.startswith(starts) if starts else True
+            ends_match = item_name.endswith(ends) if ends else True
+            
+            if starts_match and ends_match:
+                return True, f"dir pattern match: starts='{starts}', ends='{ends}'"
+    
+    return False, ""
+
 def count_reconstructed_images(source_path):
     """Count the number of images in the reconstruction output."""
     images_dir = Path(source_path) / "images"
@@ -63,33 +131,36 @@ def count_points_text(points_file):
         return 0
 
 def cleanup_reconstruction_outputs(source_path):
-    """Delete all reconstruction outputs except input folder, parameters.txt, and config files."""
+    """Delete all reconstruction outputs except preserved items."""
     source_path = Path(source_path)
     
-    # List of items to preserve
-    preserve_exact = ['input', 'parameters.txt']
+    print("\nCleaning up reconstruction outputs...")
+    preserved_count = 0
+    deleted_count = 0
     
     # Get all items in source_path
     for item in source_path.iterdir():
-        # Preserve exact matches
-        if item.name in preserve_exact:
+        preserve, reason = should_preserve(item)
+        
+        if preserve:
+            print(f"  ✓ Preserving: {item.name} ({reason})")
+            preserved_count += 1
             continue
         
-        # Preserve config files (any .ini file starting with 'config')
-        if item.name.startswith('config') and item.name.endswith('.ini'):
-            print(f"  Preserving config: {item.name}")
-            continue
-        
-        # Delete everything else
+        # Delete the item
         try:
             if item.is_dir():
                 shutil.rmtree(item)
-                print(f"  Deleted directory: {item.name}")
+                print(f"  ✗ Deleted directory: {item.name}")
+                deleted_count += 1
             else:
                 item.unlink()
-                print(f"  Deleted file: {item.name}")
+                print(f"  ✗ Deleted file: {item.name}")
+                deleted_count += 1
         except Exception as e:
-            print(f"  Warning: Could not delete {item.name}: {e}")
+            print(f"  ⚠ Warning: Could not delete {item.name}: {e}")
+    
+    print(f"\nCleanup summary: {preserved_count} preserved, {deleted_count} deleted")
 
 def run_convert(source_path, convert_args=""):
     """Run convert.py with the given source path."""
@@ -184,7 +255,6 @@ def main():
             print(f"\n❌ Below threshold ({num_images} < {threshold})")
             
             if attempt < max_attempts:
-                print(f"\nCleaning up and retrying...")
                 cleanup_reconstruction_outputs(source_path)
                 print(f"Waiting 2 seconds before retry...")
                 time.sleep(2)
