@@ -124,32 +124,39 @@ class ProjectConfig:
         return data_dir / current_project
     
     @property
+    def rawframes_base_dir(self):
+        """Get raw frames base directory"""
+        project_dir = self.current_project_dir
+        rawframes_base = self.get_string('paths', 'rawframes_base', fallback='rawFrames')
+        return project_dir / rawframes_base
+
+    @property
     def equirect_dir(self):
         """Get equirectangular images directory"""
-        project_dir = self.current_project_dir
+        rawframes_dir = self.rawframes_base_dir
         equirect_subdir = self.get_string('video_processing', 'equirect_subdir')
-        return project_dir / equirect_subdir
-    
+        return rawframes_dir / equirect_subdir
+
     @property
     def cubemap_dir(self):
         """Get cubemap images directory"""
-        project_dir = self.current_project_dir
+        rawframes_dir = self.rawframes_base_dir
         cubemap_subdir = self.get_string('video_processing', 'cubemap_subdir')
-        return project_dir / cubemap_subdir
-    
+        return rawframes_dir / cubemap_subdir
+
     @property
     def combined_dir(self):
         """Get combined cubemap output directory"""
-        project_dir = self.current_project_dir
+        rawframes_dir = self.rawframes_base_dir
         combined_subdir = self.get_string('cubemap_combination', 'combined_subdir')
-        return project_dir / combined_subdir
-    
+        return rawframes_dir / combined_subdir
+
     @property
     def train_dir(self):
-        """Get training dataset directory (user-selected dataset for training)"""
-        project_dir = self.current_project_dir
+        """Get training dataset directory"""
+        rawframes_dir = self.rawframes_base_dir
         train_subdir = self.get_string('training', 'train_subdir')
-        return project_dir / train_subdir
+        return rawframes_dir / train_subdir
     
     @property
     def face_names(self):
@@ -227,12 +234,13 @@ class ProjectConfig:
     def get_cubemap_directions(self):
         """
         Get cubemap direction entries as list of tuples (direction, view, path)
-        This replaces the need for combcube_multi_config.cfg
+        Paths are automatically constructed from current_project/rawframes_base/cubemap_subdir/face_name
         
         Returns:
             List of tuples: (direction, view, absolute_path)
         """
         entries = []
+        cubemap_base_dir = self.cubemap_dir
         
         # Get all keys in cubemap_combination section that start with forward_ or backward_
         for key in self.config['cubemap_combination']:
@@ -241,17 +249,11 @@ class ProjectConfig:
                 parts = key.split('_', 1)
                 if len(parts) == 2:
                     direction, view = parts
-                    relative_path = self.config.get('cubemap_combination', key)
+                    # Value is just the face name (e.g., "posz")
+                    face_name = self.config.get('cubemap_combination', key)
                     
-                    # Check if path is already absolute or starts with data_dir
-                    # If it's just a relative path (doesn't start with data/), prepend data_dir
-                    if not relative_path.startswith(('data/', 'data\\')):
-                        # Path is relative to current_project, so build full path
-                        data_dir = self.get_path('paths', 'data_dir')
-                        absolute_path = data_dir / relative_path
-                    else:
-                        # Path already includes data prefix, resolve from project root
-                        absolute_path = self.project_root / relative_path
+                    # Construct full path: cubemap_base_dir / face_name
+                    absolute_path = cubemap_base_dir / face_name
                     
                     entries.append((direction.lower(), view.lower(), str(absolute_path.resolve())))
         
