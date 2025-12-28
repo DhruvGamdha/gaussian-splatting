@@ -22,6 +22,7 @@ If no script name is provided, an interactive menu will be shown.
 Examples:
     python accessories/run_scripts.py --config project_config3.ini
     python accessories/run_scripts.py --config project_config3.ini get360frames
+    python accessories/run_scripts.py --config project_config3.ini combinecubemap
     python accessories/run_scripts.py --config project_config2.ini train
 """
 
