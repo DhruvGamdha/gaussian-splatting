@@ -21,6 +21,7 @@ import struct
 PRESERVE_EXACT = [
     'input',
     'parameters.txt',
+    'old_runs',
 ]
 
 # File patterns to preserve (startswith, endswith)
