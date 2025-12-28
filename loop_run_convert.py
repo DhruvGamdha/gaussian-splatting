@@ -63,24 +63,33 @@ def count_points_text(points_file):
         return 0
 
 def cleanup_reconstruction_outputs(source_path):
-    """Delete all reconstruction outputs except input folder and parameters.txt."""
+    """Delete all reconstruction outputs except input folder, parameters.txt, and config files."""
     source_path = Path(source_path)
     
     # List of items to preserve
-    preserve = ['input', 'parameters.txt']
+    preserve_exact = ['input', 'parameters.txt']
     
     # Get all items in source_path
     for item in source_path.iterdir():
-        if item.name not in preserve:
-            try:
-                if item.is_dir():
-                    shutil.rmtree(item)
-                    print(f"  Deleted directory: {item.name}")
-                else:
-                    item.unlink()
-                    print(f"  Deleted file: {item.name}")
-            except Exception as e:
-                print(f"  Warning: Could not delete {item.name}: {e}")
+        # Preserve exact matches
+        if item.name in preserve_exact:
+            continue
+        
+        # Preserve config files (any .ini file starting with 'config')
+        if item.name.startswith('config') and item.name.endswith('.ini'):
+            print(f"  Preserving config: {item.name}")
+            continue
+        
+        # Delete everything else
+        try:
+            if item.is_dir():
+                shutil.rmtree(item)
+                print(f"  Deleted directory: {item.name}")
+            else:
+                item.unlink()
+                print(f"  Deleted file: {item.name}")
+        except Exception as e:
+            print(f"  Warning: Could not delete {item.name}: {e}")
 
 def run_convert(source_path, convert_args=""):
     """Run convert.py with the given source path."""
