@@ -12,14 +12,19 @@ This is a customized implementation of 3D Gaussian Splatting optimized for 360°
 
 ### Software Requirements
 1. **Python 3.11.9** - via pyenv (Windows) or conda (HPC)
-2. **CUDA Toolkit 11.8** (or CUDA 11.x compatible version)
+2. **CUDA Toolkit 11.8 or 12.4**
    - Install **after** Visual Studio on Windows
    - **Avoid CUDA 11.6** (known issues)
 3. **Visual Studio 2019+** (Windows only) - C++ compiler for PyTorch extensions
 4. **COLMAP** - For structure-from-motion processing
    - Install from: https://colmap.github.io/install.html
-5. **FFmpeg** (optional) - For video frame extraction
-6. **Git** - For cloning the repository
+5. **Meshroom** (Optional) - Alternative for 360° to cubemap conversion
+   - Download from: https://www.fosshub.com/Meshroom-old.html?
+   - Recommended version: Meshroom v2021.1.0
+   - Provides `aliceVision_utils_split360Images` tool
+6. **FFmpeg** (optional) - For video frame extraction
+7. **Git** - For cloning the repository
+
 
 ---
 
@@ -161,6 +166,59 @@ This will:
 Manual alternative:
 ```bash
 python accessories/get360frames.py --config my_project_config.ini
+```
+
+Step 2-Alt: Convert Equirectangular to Cubemap Using Meshroom (Alternative Method)
+If you prefer using Meshroom's AliceVision tools instead of the Python script:
+
+Windows:
+```bash
+# Navigate to Meshroom bin directory
+cd C:\Users\<username>\libraries\Meshroom-2021.1.0\aliceVision\bin
+
+# Convert equirectangular frames to cubemap
+.\aliceVision_utils_split360Images.exe `
+  -i C:\path\to\project\data\<project>\rawFrames\1_equirect `
+  -o C:\path\to\project\data\<project>\rawFrames\cubemap\input `
+  --equirectangularNbSplits 8 `
+  --equirectangularSplitResolution 1200
+```
+
+Linux/HPC:
+
+```bash
+# Navigate to Meshroom bin directory
+cd /path/to/Meshroom/aliceVision/bin
+
+# Convert equirectangular frames to cubemap
+./aliceVision_utils_split360Images \
+  -i /path/to/project/data/<project>/rawFrames/1_equirect \
+  -o /path/to/project/data/<project>/rawFrames/cubemap/input \
+  --equirectangularNbSplits 8 \
+  --equirectangularSplitResolution 1200
+```
+
+Parameters:
+   - -i - Input directory with equirectangular images
+   - -o - Output directory for cubemap splits
+   - --equirectangularNbSplits - Number of splits (8 = 8 cubemap faces)
+   - --equirectangularSplitResolution - Resolution per face (e.g., 1200x1200)
+
+Advantages of Meshroom method:
+   - Faster processing (optimized C++ implementation)
+   - More stable for large images
+   - No Python memory issues
+
+Example:
+```bash
+# Full example for Windows
+cd C:\Users\dgamdha\libraries\Meshroom-2021.1.0\aliceVision\bin
+
+.\aliceVision_utils_split360Images.exe `
+  -i C:\Users\dgamdha\work\Projects\others\gaussian_splatting\code_gaussian-splatting\data\360vid2stl\blackEng_grid_20251218_aruco\rawFrames_skipframes10\1_equirect `
+  -o C:\Users\dgamdha\work\Projects\others\gaussian_splatting\code_gaussian-splatting\data\360vid2stl\blackEng_grid_20251218_aruco\rawFrames_skipframes10\cubmap_combined_v1\input `
+  --equirectangularNbSplits 8 `
+  --equirectangularSplitResolution 1200
 ```
 
 Step 3: Combine Cubemaps (if using multiple datasets)
